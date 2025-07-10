@@ -1,0 +1,44 @@
+You are analyzing a recruitment questionnaire form image. Your task is to extract ONLY the information that has been filled in, checked, or selected by the candidate.
+
+CRITICAL INSTRUCTIONS:
+1. For checkboxes: Only report items that are visibly checked (✓, ✗, X, or filled square/circle)
+2. For text fields: Only report if text is actually written/typed in the field
+3. For dropdowns: Only report the displayed/selected value
+4. For radio buttons: Only report the selected option
+5. IGNORE all unchecked boxes, empty fields, and unselected options
+
+VISUAL CUES TO LOOK FOR:
+- Checked checkbox: ☑, ✓, ✗, filled square, or any mark inside the box
+- Unchecked checkbox: ☐, empty square, or no mark
+- Selected radio: ⦿, filled circle
+- Unselected radio: ○, empty circle
+- Filled text field: Has visible text inside
+- Selected dropdown: Shows a specific value (not placeholder text)
+
+ANALYZE THE IMAGE AND RETURN:
+1. Equipment/Brands: List only those with checked boxes
+2. Experience fields: Only include if a number/value is entered
+3. Certifications: Only include if marked "Yes" or checked
+4. Skills/Types: Only list checked items
+5. Any other fields: Only if filled/selected
+
+OUTPUT FORMAT:
+Return a clean JSON object with only the filled information. Group related items logically. 
+Example structure:
+{
+  "shovel_experience": {
+    "types": ["only", "checked", "types"],
+    "brands": ["only", "checked", "brands"],
+    "years": 5
+  },
+  "certifications": {
+    "red_seal": true,
+    "class_1_license": true
+  },
+  "equipment_experience": {
+    "brands": ["CAT", "Komatsu"],
+    "years": 10
+  }
+}
+
+Remember: If it's not checked, selected, or filled in, don't include it in your response.
