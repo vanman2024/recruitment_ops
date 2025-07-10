@@ -1,0 +1,159 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in the Recruitment Operations system
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! This helps us improve the Recruitment Operations system.
+        Please provide as much detail as possible to help us reproduce and fix the issue.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - Critical - System down/Data loss
+        - High - Major feature broken
+        - Medium - Feature partially broken
+        - Low - Minor issue
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which component is affected?
+      options:
+        - CATS Integration
+        - Candidate Processing
+        - Job Matching (AI)
+        - Batch Processing
+        - Webhook Server
+        - Slack Notifications
+        - Configuration
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature Area
+      description: Which feature area is impacted?
+      options:
+        - Candidate Import/Export
+        - Resume Parsing
+        - Job Matching Algorithm
+        - Notification System
+        - API Integration
+        - Data Processing
+        - Authentication
+        - Performance
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug
+      placeholder: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Start the webhook server with '...'
+        2. Send a candidate request with '...'
+        3. Observe the processing in '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+
+  - type: textarea
+    id: error_logs
+    attributes:
+      label: Error Logs
+      description: Please paste any relevant error logs
+      render: shell
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did this occur?
+      options:
+        - Local Development
+        - Testing/Staging
+        - Production
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python Version
+      description: Which Python version are you using?
+      placeholder: "3.8, 3.9, 3.10, etc."
+
+  - type: input
+    id: cats_version
+    attributes:
+      label: CATS API Version
+      description: If relevant, which CATS API version?
+      placeholder: "v3"
+
+  - type: textarea
+    id: config_details
+    attributes:
+      label: Configuration Details
+      description: Any relevant configuration that might help reproduce
+      placeholder: |
+        - Batch size: 
+        - API endpoints:
+        - Environment variables:
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: Any temporary workaround you've found?
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Regression
+      description: Did this work before?
+      options:
+        - Not a regression
+        - Yes - worked in previous version
+        - Unknown
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Add screenshots, API responses, or other context

@@ -1,0 +1,81 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+    
+    - name: Security check with bandit
+      run: |
+        bandit -r catsone/ -f json -o bandit-report.json || true
+    
+    - name: Check dependencies with safety
+      run: |
+        pip install -r requirements.txt
+        safety check --json || true
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+  
+  code-analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install analysis tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint mypy radon
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    
+    - name: Run pylint
+      run: |
+        pylint catsone/ --output-format=json > pylint-report.json || true
+    
+    - name: Run mypy type checking
+      run: |
+        mypy catsone/ --ignore-missing-imports --html-report mypy-report || true
+    
+    - name: Complexity analysis with radon
+      run: |
+        radon cc catsone/ -a -j > radon-cc-report.json || true
+        radon mi catsone/ -j > radon-mi-report.json || true
+    
+    - name: Upload analysis reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: code-analysis-reports
+        path: |
+          pylint-report.json
+          mypy-report/
+          radon-cc-report.json
+          radon-mi-report.json

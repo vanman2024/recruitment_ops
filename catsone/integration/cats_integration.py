@@ -8,7 +8,9 @@ import json
 from typing import Dict, List, Optional
 from datetime import datetime
 import logging
-from config import CATS_API_KEY, CATS_API_URL, CATS_COMPANY_ID
+import sys
+sys.path.append('/home/gotime2022/recruitment_ops')
+from catsone.config import CATS_API_KEY, CATS_API_URL, CATS_COMPANY_ID
 
 logger = logging.getLogger(__name__)
 

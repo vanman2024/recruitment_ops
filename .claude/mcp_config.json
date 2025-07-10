@@ -1,1 +1,52 @@
-/home/gotime2022/mcp-kernel-new/.claude/mcp_central_config.json
+{
+  "mcpServers": {
+    "figma-http": {
+      "transport": "http",
+      "url": "http://localhost:8031",
+      "version": "figma"
+    }
+,
+    "filesystem-http": {
+      "transport": "http",
+      "url": "http://localhost:8006",
+      "version": "filesystem"
+    }
+,
+    "github-http": {
+      "transport": "http",
+      "url": "http://localhost:8011",
+      "version": "github"
+    }
+,
+    "memory-http": {
+      "transport": "http",
+      "url": "http://localhost:8007",
+      "version": "memory"
+    }
+,
+    "sequential-thinking-http": {
+      "transport": "http",
+      "url": "http://localhost:8016",
+      "version": "sequential-thinking"
+    }
+,
+    "supabase-v4": {
+      "transport": "http",
+      "url": "http://localhost:8013",
+      "version": "supabase"
+    }
+,
+    "vercel-deploy-http": {
+      "transport": "http",
+      "url": "http://localhost:8025",
+      "version": "vercel-deploy"
+    }
+,
+    "vercel-v0-http": {
+      "transport": "http",
+      "url": "http://localhost:8010",
+      "version": "vercel-v0"
+    }
+
+  }
+}

@@ -1,0 +1,135 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for the Recruitment Operations system
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Your ideas help make our recruitment system better.
+        Please describe your feature request in detail.
+
+  - type: dropdown
+    id: feature_type
+    attributes:
+      label: Feature Type
+      description: What type of feature is this?
+      options:
+        - New Integration
+        - AI/ML Enhancement
+        - Performance Improvement
+        - User Interface
+        - API Enhancement
+        - Automation
+        - Reporting/Analytics
+        - Security Enhancement
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - Critical - Blocking work
+        - High - Significant improvement
+        - Medium - Nice to have
+        - Low - Future consideration
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Related Component
+      description: Which component would this feature affect?
+      multiple: true
+      options:
+        - CATS Integration
+        - Candidate Processing
+        - Job Matching (AI)
+        - Batch Processing
+        - Webhook Server
+        - Slack Notifications
+        - Configuration
+        - New Component
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem_statement
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: Currently, we have to manually... This is time-consuming because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your proposed solution
+      placeholder: I suggest implementing...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: What alternatives have you considered?
+
+  - type: textarea
+    id: implementation_details
+    attributes:
+      label: Implementation Details
+      description: Any technical details or suggestions for implementation?
+      placeholder: |
+        - Could use library X for this
+        - Would need to modify the Y module
+        - API endpoint structure could be...
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits
+      description: What are the key benefits of this feature?
+      placeholder: |
+        - Reduces processing time by X%
+        - Improves accuracy of job matching
+        - Automates manual process
+
+  - type: dropdown
+    id: breaking_change
+    attributes:
+      label: Breaking Change
+      description: Would this be a breaking change?
+      options:
+        - No - Backward compatible
+        - Yes - Breaking change
+        - Unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups/Examples
+      description: Any mockups, examples, or reference implementations?
+
+  - type: input
+    id: timeline
+    attributes:
+      label: Desired Timeline
+      description: When would you need this feature?
+      placeholder: "Q1 2024, ASAP, No rush"
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful

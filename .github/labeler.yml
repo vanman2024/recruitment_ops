@@ -1,0 +1,54 @@
+# Label configuration for PR labeler
+# This helps automatically label PRs based on file changes
+
+catsone:
+  - catsone/**/*
+  - "*.py"
+
+integration:
+  - catsone/integration/**/*
+  - "**/integration/**/*"
+
+processors:
+  - catsone/processors/**/*
+  - "**/process_*.py"
+  - "**/batch_*.py"
+
+utilities:
+  - catsone/utils/**/*
+  - "**/webhook_*.py"
+  - "**/slack_*.py"
+
+ai-ml:
+  - "**/gemini_*.py"
+  - "**/intelligent_*.py"
+  - "**/ai_*.py"
+  - "**/ml_*.py"
+
+test:
+  - test/**/*
+  - tests/**/*
+  - "*.test.*"
+  - "*.spec.*"
+
+documentation:
+  - "*.md"
+  - docs/**/*
+  - .claude/**/*.md
+
+github-workflows:
+  - .github/**/*
+
+dependencies:
+  - requirements.txt
+  - setup.py
+  - pyproject.toml
+  - Pipfile
+  - Pipfile.lock
+
+configuration:
+  - "**/config.py"
+  - "*.yml"
+  - "*.yaml"
+  - "*.json"
+  - .env*

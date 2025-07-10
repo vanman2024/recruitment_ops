@@ -1,0 +1,45 @@
+# Environment
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.bak
+*.tmp
+temp/
+tmp/
+
+# ngrok
+ngrok
+ngrok-*.tgz
+ngrok.log
+
+# Test data
+questionnaire_images/
+test_*.py
+*_test.py
+find_*.py
+search_*.py
+manual_*.py
+
+# Analysis outputs
+*.txt
+*.json
+!requirements.txt
+!CLAUDE.md
+!SYSTEM_DESIGN.md
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,29 @@
+# This file defines code ownership for automatic PR review assignments
+# Each line is a file pattern followed by one or more owners
+
+# Global owners for all files
+* @vanman2024
+
+# CATS Integration
+/catsone/integration/ @vanman2024
+/catsone/config.py @vanman2024
+
+# Processing Components
+/catsone/processors/ @vanman2024
+/catsone/processors/gemini_helper.py @vanman2024
+/catsone/processors/intelligent_job_matcher.py @vanman2024
+
+# Utilities
+/catsone/utils/ @vanman2024
+
+# GitHub Configuration
+/.github/ @vanman2024
+
+# Documentation
+*.md @vanman2024
+/docs/ @vanman2024
+
+# Configuration files
+*.yml @vanman2024
+*.yaml @vanman2024
+.env* @vanman2024
