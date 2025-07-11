@@ -177,9 +177,10 @@ class ComprehensiveAttachmentProcessor:
                 is_dayforce = False
                 for attachment in questionnaire_info.get('attachments', []):
                     filename = attachment.get('filename', '').lower()
-                    # Match "recruiting - dayforce" pattern (ignoring numbers, brackets, etc.)
-                    if 'recruiting' in filename and 'dayforce' in filename:
+                    # Match any filename containing "dayforce"
+                    if 'dayforce' in filename:
                         is_dayforce = True
+                        logger.info(f"Detected Dayforce questionnaire: {filename}")
                         break
                 
                 # Apply Dayforce handler if needed
@@ -215,9 +216,10 @@ class ComprehensiveAttachmentProcessor:
                 is_dayforce = False
                 for attachment in questionnaire_info.get('attachments', []):
                     filename = attachment.get('filename', '').lower()
-                    # Match "recruiting - dayforce" pattern (ignoring numbers, brackets, etc.)
-                    if 'recruiting' in filename and 'dayforce' in filename:
+                    # Match any filename containing "dayforce"
+                    if 'dayforce' in filename:
                         is_dayforce = True
+                        logger.info(f"Detected Dayforce questionnaire: {filename}")
                         break
                 
                 # Apply Dayforce handler if needed

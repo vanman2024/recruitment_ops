@@ -33,7 +33,9 @@ class AttachmentClassifier:
                 'filename_patterns': [
                     r'questionnaire', r'form', r'application', 
                     r'survey', r'assessment', r'questions',
-                    r'recruiting\s*-\s*dayforce'  # Matches "Recruiting - Dayforce" with any spacing and ignores (1), (2), etc.
+                    r'recruiting\s*-\s*dayforce',  # Matches "Recruiting - Dayforce" with any spacing
+                    r'dayforce',  # Match any filename with "dayforce"
+                    r'inbox.*dayforce'  # Match "Inbox - Message Center - Dayforce" pattern
                 ],
                 'content_patterns': [
                     r'do you have', r'are you comfortable', 
