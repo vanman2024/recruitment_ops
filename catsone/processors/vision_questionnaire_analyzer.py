@@ -62,6 +62,21 @@ class VisionQuestionnaireAnalyzer:
             # Create detailed prompt for comprehensive vision analysis
             prompt = f"""
             You are analyzing page of a filled questionnaire form. Extract EVERYTHING comprehensively.
+            
+            CRITICAL: PAY EXTREME ATTENTION TO RADIO BUTTONS AND CHECKMARKS!
+            
+            FOR RADIO BUTTONS (VERY IMPORTANT):
+            - Look for SUBTLE differences between selected and unselected radio buttons
+            - Selected radio button may appear as: filled circle (●), darker circle, circle with dot inside (⦿)
+            - Unselected radio button appears as: empty circle (○)
+            - IMPORTANT: In some forms, the difference is VERY SUBTLE - a slightly darker shade
+            - Look for ANY visual difference in the radio button circles, even minimal shading
+            
+            FOR CHECKBOXES:
+            - Empty checkbox: □ or ☐ (NOT selected)
+            - Checked checkbox: ☑ or ☒ or ✓ or ✔ or X or filled square
+            
+            Only include items in "actual_selections" if they have a VISIBLE checkmark or selection!
 
             FOR EACH QUESTION ON THIS PAGE, provide:
 
@@ -76,12 +91,13 @@ class VisionQuestionnaireAnalyzer:
                - List EVERY dropdown option if visible
                - Include any "Other" or write-in options
 
-            3. ACTUAL SELECTIONS:
-               - Which specific checkboxes are checked (✓, X, or filled)
-               - Which radio button is selected
-               - What dropdown option was chosen
-               - Any text written in fields
-               - Any "Other" specifications written
+            3. ACTUAL SELECTIONS (CRITICAL - LOOK CAREFULLY):
+               - For checkboxes: Look for ✓, ✔, X, or filled/darkened squares
+               - For radio buttons: Look for filled circles (●) vs empty circles (○)
+               - IMPORTANT: Only list options that have VISIBLE check marks or selections
+               - If a checkbox is empty/unchecked, do NOT include it in actual_selections
+               - For dropdowns: Note the displayed/selected value
+               - Include any text written in text fields
 
             4. EQUIPMENT-SPECIFIC EXTRACTION:
                If the question involves equipment, machinery, or brands:
@@ -225,6 +241,9 @@ class VisionQuestionnaireAnalyzer:
     
     def _categorize_question(self, question_text: str) -> str:
         """Categorize question for easier reference"""
+        
+        if not question_text:
+            return 'unknown'
         
         text_lower = question_text.lower()
         

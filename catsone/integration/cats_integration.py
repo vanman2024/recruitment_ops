@@ -163,13 +163,24 @@ class CATSClient:
         """Update candidate notes field"""
         endpoint = f"{self.base_url}/candidates/{candidate_id}"
         
-        data = {
-            "notes": notes
-        }
-        
         try:
+            # First get current candidate data to preserve other fields
+            current = self.get_candidate_details(candidate_id)
+            if not current:
+                logger.error(f"Could not fetch candidate {candidate_id} for update")
+                return False
+            
+            # Use PUT with all required fields to update notes
+            data = {
+                "id": candidate_id,
+                "first_name": current.get('first_name'),
+                "last_name": current.get('last_name'),
+                "notes": notes
+            }
+            
             response = requests.put(endpoint, headers=self.headers, json=data)
             response.raise_for_status()
+            logger.info(f"Successfully updated notes for candidate {candidate_id}")
             return True
         except Exception as e:
             logger.error(f"Error updating candidate notes: {e}")
