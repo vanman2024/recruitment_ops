@@ -33,7 +33,7 @@ jobs:
         safety check --json || true
     
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-reports
@@ -70,7 +70,7 @@ jobs:
         radon mi catsone/ -j > radon-mi-report.json || true
     
     - name: Upload analysis reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: code-analysis-reports
