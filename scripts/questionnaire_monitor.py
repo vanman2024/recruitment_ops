@@ -13,18 +13,22 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # Load environment
-load_dotenv('/home/gotime2022/recruitment_ops/.env')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+load_dotenv(os.path.join(project_root, '.env'))
 
 # Add project to path
-sys.path.append('/home/gotime2022/recruitment_ops')
+sys.path.append(project_root)
 from catsone.processors.intelligent_candidate_processor import IntelligentCandidateProcessor
 
 # Setup logging
+log_dir = os.path.join(project_root, 'logs')
+os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/home/gotime2022/recruitment_ops/logs/questionnaire_monitor.log'),
+        logging.FileHandler(os.path.join(log_dir, 'questionnaire_monitor.log')),
         logging.StreamHandler()
     ]
 )
@@ -46,7 +50,7 @@ class EnhancedQuestionnaireMonitor:
     
     def load_cache(self):
         """Load processed candidates cache"""
-        cache_file = '/home/gotime2022/recruitment_ops/logs/processed_candidates.json'
+        cache_file = os.path.join(project_root, 'logs', 'processed_candidates.json')
         if os.path.exists(cache_file):
             try:
                 with open(cache_file, 'r') as f:
@@ -57,7 +61,7 @@ class EnhancedQuestionnaireMonitor:
     
     def save_cache(self):
         """Save processed candidates cache"""
-        cache_file = '/home/gotime2022/recruitment_ops/logs/processed_candidates.json'
+        cache_file = os.path.join(project_root, 'logs', 'processed_candidates.json')
         with open(cache_file, 'w') as f:
             json.dump(list(self.processed_cache), f)
     
