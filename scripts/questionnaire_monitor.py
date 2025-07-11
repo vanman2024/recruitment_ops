@@ -40,7 +40,7 @@ CATS_API_URL = "https://api.catsone.com/v3"
 POLL_INTERVAL = 300  # 5 minutes
 QUESTIONNAIRE_TAG = "Questionnaire Completed"
 PROCESSED_TAG = "AI Notes Generated"
-CHECK_HOURS = 48  # Check candidates updated in last 48 hours
+CHECK_HOURS = 168  # Check candidates updated in last 7 days
 
 class EnhancedQuestionnaireMonitor:
     def __init__(self):
