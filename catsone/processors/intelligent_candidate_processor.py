@@ -222,7 +222,7 @@ class IntelligentCandidateProcessor:
         
         try:
             # Build CATS URL for direct link
-            cats_url = f"https://app.catsone.com/candidates/{candidate_id}"
+            cats_url = f"https://bigcountryequipmentrepair.catsone.com/index.php?m=candidates&a=show&candidateID={candidate_id}"
             
             # Create Slack message
             slack_message = {
