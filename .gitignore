@@ -42,4 +42,9 @@ manual_*.py
 
 # OS
 .DS_Store
-Thumbs.dbarchive/
+Thumbs.db
+
+# Project specific
+archive/
+*.log
+logs/
