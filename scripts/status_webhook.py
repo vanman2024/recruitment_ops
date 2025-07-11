@@ -34,12 +34,12 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Define which status changes should trigger processing
+# Since questionnaire tags don't trigger webhooks, we use pipeline statuses
 TRIGGER_STATUSES = [
-    "Questionnaire Completed",
-    "Ready for Processing", 
-    "Questionnaire Review",
-    "Hiring Manager Approved",  # Use this as trigger since questionnaire status doesn't exist
-    "Submitted to Hiring Manager"  # Or this one
+    "Submitted to Hiring Manager",  # Primary trigger - when questionnaire complete
+    "Hiring Manager Approved",      # Secondary trigger - after manager review
+    "First Follow Up",             # Optional - if you want to process on follow-ups
+    "Booked meeting"               # Optional - if meeting booked after questionnaire
 ]
 
 def process_candidate_async(candidate_id: int, job_id: int, status: str):

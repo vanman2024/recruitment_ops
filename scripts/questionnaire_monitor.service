@@ -1,0 +1,17 @@
+[Unit]
+Description=CATS Questionnaire Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=gotime2022
+WorkingDirectory=/home/gotime2022/recruitment_ops
+Environment="PATH=/home/gotime2022/recruitment_ops/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/gotime2022/recruitment_ops/venv/bin/python /home/gotime2022/recruitment_ops/scripts/questionnaire_monitor.py
+Restart=always
+RestartSec=60
+StandardOutput=append:/home/gotime2022/recruitment_ops/logs/questionnaire_monitor.log
+StandardError=append:/home/gotime2022/recruitment_ops/logs/questionnaire_monitor_error.log
+
+[Install]
+WantedBy=multi-user.target
