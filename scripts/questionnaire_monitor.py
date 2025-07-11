@@ -39,7 +39,7 @@ CATS_API_KEY = os.getenv('CATS_API_KEY')
 CATS_API_URL = "https://api.catsone.com/v3"
 POLL_INTERVAL = 300  # 5 minutes
 QUESTIONNAIRE_TAG = "Questionnaire Completed"
-PROCESSED_TAG = "ai_notes_generated"
+PROCESSED_TAG = "AI Notes Generated"
 CHECK_HOURS = 48  # Check candidates updated in last 48 hours
 
 class EnhancedQuestionnaireMonitor:

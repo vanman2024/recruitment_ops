@@ -104,7 +104,7 @@ class handler(BaseHTTPRequestHandler):
                             tags.append(tag)
                 
                 # Check if questionnaire completed but not processed
-                if "Questionnaire Completed" in tags and "ai_notes_generated" not in tags:
+                if "Questionnaire Completed" in tags and "AI Notes Generated" not in tags:
                     # Send Slack notification
                     if slack_webhook and slack_webhook != "your_slack_webhook_here":
                         candidate_name = f"{candidate.get('first_name', '')} {candidate.get('last_name', '')}".strip()

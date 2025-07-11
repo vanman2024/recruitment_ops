@@ -49,7 +49,7 @@ class handler(BaseHTTPRequestHandler):
                             tags.append(tag['title'])
             
             # Check if should send notification
-            should_notify = "Questionnaire Completed" in tags and "ai_notes_generated" not in tags
+            should_notify = "Questionnaire Completed" in tags and "AI Notes Generated" not in tags
             
             if should_notify and SLACK_WEBHOOK_URL:
                 candidate_name = f"{candidate.get('first_name', '')} {candidate.get('last_name', '')}".strip()
@@ -66,7 +66,7 @@ class handler(BaseHTTPRequestHandler):
                 "name": f"{candidate.get('first_name', '')} {candidate.get('last_name', '')}".strip(),
                 "tags": tags,
                 "has_questionnaire_completed": "Questionnaire Completed" in tags,
-                "has_ai_notes": "ai_notes_generated" in tags,
+                "has_ai_notes": "AI Notes Generated" in tags,
                 "should_notify": should_notify,
                 "slack_sent": slack_sent
             }
