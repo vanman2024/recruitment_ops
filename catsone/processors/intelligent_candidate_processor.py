@@ -6,6 +6,7 @@ Intelligent Candidate Processor - Extracts everything, filters by job requiremen
 import os
 import sys
 import logging
+import requests
 from typing import Dict, Any, Optional
 from datetime import datetime
 
@@ -30,6 +31,7 @@ class IntelligentCandidateProcessor:
         self.job_extractor = JobRequirementsExtractor()
         self.attachment_processor = ComprehensiveAttachmentProcessor()
         self.ai_formatter = AINotesFormatter()
+        self.slack_webhook_url = os.getenv('SLACK_WEBHOOK_URL')
     
     def process_candidate_for_job(self, candidate_id: int, job_id: int) -> Dict[str, Any]:
         """Process candidate with job-specific filtering"""
@@ -154,6 +156,15 @@ class IntelligentCandidateProcessor:
             # Step 6: Update CATS
             success = self.cats.update_candidate_notes(candidate_id, final_notes)
             
+            # Step 7: Send Slack notification if notes were successfully updated
+            if success:
+                self._send_slack_notification(
+                    candidate_id=candidate_id,
+                    candidate_name=candidate_name,
+                    job_title=job_requirements['source']['job_title'],
+                    job_id=job_id
+                )
+            
             return {
                 'success': success,
                 'candidate_name': candidate_name,
@@ -201,6 +212,87 @@ class IntelligentCandidateProcessor:
             )
         
         return notes
+    
+    def _send_slack_notification(self, candidate_id: int, candidate_name: str, job_title: str, job_id: int):
+        """Send Slack notification when AI notes are generated"""
+        
+        if not self.slack_webhook_url or self.slack_webhook_url == "your_slack_webhook_here":
+            logger.info("Slack webhook not configured, skipping notification")
+            return
+        
+        try:
+            # Build CATS URL for direct link
+            cats_url = f"https://app.catsone.com/candidates/{candidate_id}"
+            
+            # Create Slack message
+            slack_message = {
+                "text": f"🤖 AI Notes Generated for {candidate_name}",
+                "blocks": [
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "🤖 AI Notes Generated",
+                            "emoji": True
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Candidate:*\n{candidate_name}"
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*ID:*\n{candidate_id}"
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Position:*\n{job_title}"
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Job ID:*\n{job_id}"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"<@ryan.angel> AI notes have been generated. Please review the candidate's profile."
+                        }
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "View in CATS",
+                                    "emoji": True
+                                },
+                                "url": cats_url,
+                                "style": "primary"
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+            # Send to Slack
+            response = requests.post(self.slack_webhook_url, json=slack_message)
+            
+            if response.status_code == 200:
+                logger.info(f"Slack notification sent for candidate {candidate_id}")
+            else:
+                logger.error(f"Failed to send Slack notification: {response.status_code}")
+                
+        except Exception as e:
+            logger.error(f"Error sending Slack notification: {e}")
+            # Don't fail the whole process if Slack notification fails
 
 
 def process_candidate(candidate_id: int, job_id: int):
