@@ -151,25 +151,59 @@ class EnhancedQuestionnaireMonitor:
     
     def add_tag_to_candidate(self, candidate_id, tag_name):
         """Add tag to candidate"""
-        url = f"{CATS_API_URL}/candidates/{candidate_id}/tags"
-        data = {"tags": [{"title": tag_name}]}
-        
         try:
-            # Try POST first (CATS v3 uses POST for adding tags)
-            response = requests.post(url, headers=self.headers, json=data)
-            if response.status_code in [200, 201]:
-                logger.info(f"Added tag '{tag_name}' to candidate {candidate_id}")
+            # First, get all tags to find the ID for our tag
+            tags_url = f"{CATS_API_URL}/tags"
+            response = requests.get(tags_url, headers=self.headers)
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to get tags list: {response.status_code}")
+                return False
+            
+            tags_data = response.json()
+            tag_id = None
+            
+            # Find the tag ID
+            if '_embedded' in tags_data:
+                tags = tags_data['_embedded'].get('tags', [])
+                for tag in tags:
+                    if tag.get('title') == tag_name:
+                        tag_id = tag.get('id')
+                        logger.info(f"Found tag '{tag_name}' with ID: {tag_id}")
+                        break
+            
+            if not tag_id:
+                logger.error(f"Tag '{tag_name}' not found in CATS system. Please create it first.")
+                return False
+            
+            # Now attach the tag to the candidate using PUT with tag IDs
+            url = f"{CATS_API_URL}/candidates/{candidate_id}/tags"
+            
+            # First get current tags
+            current_response = requests.get(url, headers=self.headers)
+            current_tag_ids = []
+            
+            if current_response.status_code == 200:
+                current_data = current_response.json()
+                if '_embedded' in current_data:
+                    current_tags = current_data['_embedded'].get('tags', [])
+                    current_tag_ids = [t.get('id') for t in current_tags if t.get('id')]
+            
+            # Add our tag ID if not already present
+            if tag_id not in current_tag_ids:
+                current_tag_ids.append(tag_id)
+            
+            # PUT request with all tag IDs
+            data = {"tags": current_tag_ids}
+            response = requests.put(url, headers=self.headers, json=data)
+            
+            if response.status_code in [200, 201, 204]:
+                logger.info(f"Successfully added tag '{tag_name}' (ID: {tag_id}) to candidate {candidate_id}")
                 return True
             else:
-                logger.error(f"Error adding tag with POST: {response.status_code} - {response.text}")
-                # Try PUT as fallback
-                response = requests.put(url, headers=self.headers, json=data)
-                if response.status_code in [200, 201]:
-                    logger.info(f"Added tag '{tag_name}' to candidate {candidate_id} using PUT")
-                    return True
-                else:
-                    logger.error(f"Error adding tag with PUT: {response.status_code} - {response.text}")
-                    return False
+                logger.error(f"Error adding tag: {response.status_code} - {response.text}")
+                return False
+                
         except Exception as e:
             logger.error(f"Error adding tag: {e}")
             return False
