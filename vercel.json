@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/questionnaire-monitor.py": {
+      "maxDuration": 10
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/questionnaire-monitor",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
