@@ -7,9 +7,9 @@ import requests
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            # Get environment variables
-            CATS_API_KEY = os.environ.get('CATS_API_KEY')
-            SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
+            # Get environment variables and strip whitespace
+            CATS_API_KEY = os.environ.get('CATS_API_KEY', '').strip()
+            SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL', '').strip()
             
             if not CATS_API_KEY:
                 self.send_response(500)
@@ -35,7 +35,9 @@ class handler(BaseHTTPRequestHandler):
     
     def check_questionnaires(self, api_key, slack_webhook):
         """Check for candidates with completed questionnaires"""
-        headers = {"Authorization": f"Token {api_key}"}
+        # Ensure API key is clean
+        clean_api_key = api_key.strip()
+        headers = {"Authorization": f"Token {clean_api_key}"}
         
         # Calculate date range
         end_date = datetime.now()

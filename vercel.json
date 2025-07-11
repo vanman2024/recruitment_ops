@@ -9,5 +9,11 @@
       "path": "/api/questionnaire-monitor",
       "schedule": "*/5 * * * *"
     }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
