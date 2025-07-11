@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/questionnaire-monitor.py": {
-      "maxDuration": 10
+      "maxDuration": 30
     }
   },
   "crons": [

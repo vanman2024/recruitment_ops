@@ -39,14 +39,14 @@ class handler(BaseHTTPRequestHandler):
         clean_api_key = api_key.strip()
         headers = {"Authorization": f"Token {clean_api_key}"}
         
-        # Calculate date range
+        # Calculate date range - reduce to 24 hours for faster processing
         end_date = datetime.now()
-        start_date = end_date - timedelta(hours=48)
+        start_date = end_date - timedelta(hours=24)
         
-        # Search for candidates
+        # Search for candidates - limit to 20 for Vercel timeout
         params = {
             "updated_after": start_date.isoformat(),
-            "per_page": 100
+            "per_page": 20
         }
         
         response = requests.get(
