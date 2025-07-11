@@ -1,0 +1,18 @@
+[Unit]
+Description=CATS Webhook Handler
+After=network.target
+
+[Service]
+Type=simple
+User=gotime2022
+WorkingDirectory=/home/gotime2022/recruitment_ops
+Environment="PATH=/home/gotime2022/recruitment_ops/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+EnvironmentFile=/home/gotime2022/recruitment_ops/.env
+ExecStart=/home/gotime2022/recruitment_ops/venv/bin/python /home/gotime2022/recruitment_ops/webhook_service.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/gotime2022/recruitment_ops/logs/webhook.log
+StandardError=append:/home/gotime2022/recruitment_ops/logs/webhook-error.log
+
+[Install]
+WantedBy=multi-user.target

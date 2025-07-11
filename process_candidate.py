@@ -9,10 +9,19 @@ import sys
 import logging
 from dotenv import load_dotenv
 
-# Setup logging
+# Setup logging to file and console
+from datetime import datetime
+LOG_DIR = '/home/gotime2022/recruitment_ops/logs'
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, f'recruitment_ops_{datetime.now().strftime("%Y%m%d")}.log')
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE, mode='a'),
+        logging.StreamHandler()
+    ]
 )
 
 # Load environment

@@ -1,0 +1,15 @@
+[Unit]
+Description=CATS Webhook Handler Service
+After=network.target
+
+[Service]
+Type=simple
+User=gotime2022
+WorkingDirectory=/home/gotime2022/recruitment_ops
+Environment="PATH=/home/gotime2022/recruitment_ops/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/gotime2022/recruitment_ops/venv/bin/python /home/gotime2022/recruitment_ops/webhook_service.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
