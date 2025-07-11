@@ -33,7 +33,7 @@ CANDIDATE_ID=${1:-409281807}
 echo -e "${GREEN}Testing with candidate ID: $CANDIDATE_ID${NC}"
 
 # Run the processing
-python3 process_candidate.py $CANDIDATE_ID
+python3 scripts/process_candidate.py $CANDIDATE_ID
 
 # Check the notes
 echo -e "\n${GREEN}Checking saved notes...${NC}"
