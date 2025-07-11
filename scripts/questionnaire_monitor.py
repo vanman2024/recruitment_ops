@@ -155,13 +155,21 @@ class EnhancedQuestionnaireMonitor:
         data = {"tags": [{"title": tag_name}]}
         
         try:
-            response = requests.put(url, headers=self.headers, json=data)
+            # Try POST first (CATS v3 uses POST for adding tags)
+            response = requests.post(url, headers=self.headers, json=data)
             if response.status_code in [200, 201]:
                 logger.info(f"Added tag '{tag_name}' to candidate {candidate_id}")
                 return True
             else:
-                logger.error(f"Error adding tag: {response.status_code} - {response.text}")
-                return False
+                logger.error(f"Error adding tag with POST: {response.status_code} - {response.text}")
+                # Try PUT as fallback
+                response = requests.put(url, headers=self.headers, json=data)
+                if response.status_code in [200, 201]:
+                    logger.info(f"Added tag '{tag_name}' to candidate {candidate_id} using PUT")
+                    return True
+                else:
+                    logger.error(f"Error adding tag with PUT: {response.status_code} - {response.text}")
+                    return False
         except Exception as e:
             logger.error(f"Error adding tag: {e}")
             return False
