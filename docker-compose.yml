@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  questionnaire-processor:
+    build: .
+    environment:
+      - CATS_API_KEY=${CATS_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
