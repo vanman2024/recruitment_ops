@@ -87,12 +87,19 @@ class handler(BaseHTTPRequestHandler):
                 if isinstance(tag_data, dict) and '_embedded' in tag_data:
                     tag_list = tag_data['_embedded'].get('tags', [])
                     for tag in tag_list:
-                        if isinstance(tag, dict) and 'name' in tag:
-                            tags.append(tag['name'])
+                        if isinstance(tag, dict):
+                            # Check for 'title' field (CATS uses 'title' not 'name')
+                            if 'title' in tag:
+                                tags.append(tag['title'])
+                            elif 'name' in tag:
+                                tags.append(tag['name'])
                 elif isinstance(tag_data, list):
                     for tag in tag_data:
-                        if isinstance(tag, dict) and 'name' in tag:
-                            tags.append(tag['name'])
+                        if isinstance(tag, dict):
+                            if 'title' in tag:
+                                tags.append(tag['title'])
+                            elif 'name' in tag:
+                                tags.append(tag['name'])
                         elif isinstance(tag, str):
                             tags.append(tag)
                 

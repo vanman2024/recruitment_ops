@@ -42,6 +42,9 @@ class handler(BaseHTTPRequestHandler):
                     debug_info["tag_response_sample"] = {
                         k: v for k, v in list(tag_data.items())[:3]
                     }
+                    # Check _embedded section
+                    if '_embedded' in tag_data:
+                        debug_info["_embedded_content"] = tag_data['_embedded']
                 else:
                     debug_info["tag_response_sample"] = str(tag_data)[:200]
             else:
