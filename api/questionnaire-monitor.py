@@ -83,10 +83,18 @@ class handler(BaseHTTPRequestHandler):
                 tag_data = tag_response.json()
                 
                 # Handle embedded format for tags
+                tags = []
                 if isinstance(tag_data, dict) and '_embedded' in tag_data:
-                    tags = [tag['name'] for tag in tag_data['_embedded'].get('tags', [])]
-                else:
-                    tags = [tag['name'] for tag in tag_data] if isinstance(tag_data, list) else []
+                    tag_list = tag_data['_embedded'].get('tags', [])
+                    for tag in tag_list:
+                        if isinstance(tag, dict) and 'name' in tag:
+                            tags.append(tag['name'])
+                elif isinstance(tag_data, list):
+                    for tag in tag_data:
+                        if isinstance(tag, dict) and 'name' in tag:
+                            tags.append(tag['name'])
+                        elif isinstance(tag, str):
+                            tags.append(tag)
                 
                 # Check if questionnaire completed but not processed
                 if "Questionnaire Completed" in tags and "ai_notes_generated" not in tags:
