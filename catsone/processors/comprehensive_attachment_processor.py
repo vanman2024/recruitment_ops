@@ -17,6 +17,8 @@ from catsone.processors.attachment_classifier import AttachmentClassifier
 from catsone.processors.vision_questionnaire_analyzer import VisionQuestionnaireAnalyzer
 from catsone.processors.dayforce_questionnaire_handler import DayforceQuestionnaireHandler
 from catsone.processors.claude_vision_analyzer import ClaudeVisionAnalyzer
+from catsone.processors.pillow_form_enhancer import PillowFormEnhancer
+from catsone.processors.pdf_form_extractor import PDFFormExtractor
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
@@ -49,6 +51,10 @@ class ComprehensiveAttachmentProcessor:
             self.vision_analyzer = VisionQuestionnaireAnalyzer(self.gemini_key)
             
         self.dayforce_handler = DayforceQuestionnaireHandler()
+        
+        # Initialize enhanced processing components
+        self.form_enhancer = PillowFormEnhancer()
+        self.pdf_extractor = PDFFormExtractor()
     
     def process_all_attachments(self, candidate_id: int) -> Dict[str, Any]:
         """Process all attachments for a candidate"""
@@ -156,85 +162,284 @@ class ComprehensiveAttachmentProcessor:
             return {'error': str(e)}
     
     def _process_questionnaire(self, questionnaire_info: Dict) -> Dict[str, Any]:
-        """Process questionnaire attachment(s)"""
+        """Process questionnaire attachment(s) using hybrid approach"""
         
         try:
-            if questionnaire_info['type'] == 'multi_page':
-                # Download all pages and save to temp folder
-                temp_folder = tempfile.mkdtemp()
-                
-                for i, page_info in enumerate(questionnaire_info['pages']):
-                    file_path = self._download_attachment(page_info['id'])
-                    if file_path:
-                        # Move to temp folder with proper naming
-                        new_path = os.path.join(temp_folder, f"page_{i+1}.png")
-                        os.rename(file_path, new_path)
-                
-                # Run vision analysis
-                vision_result = self.vision_analyzer.analyze_questionnaire_images(temp_folder)
-                
-                # Check if this is a Dayforce questionnaire
-                is_dayforce = False
-                for attachment in questionnaire_info.get('attachments', []):
-                    filename = attachment.get('filename', '').lower()
-                    # Match any filename containing "dayforce"
-                    if 'dayforce' in filename:
-                        is_dayforce = True
-                        logger.info(f"Detected Dayforce questionnaire: {filename}")
-                        break
-                
-                # Apply Dayforce handler if needed
-                if is_dayforce:
-                    vision_result = self.dayforce_handler.process_dayforce_questionnaire(vision_result)
-                
-                # Clean up
-                import shutil
-                shutil.rmtree(temp_folder)
-                
-                return vision_result
-                
-            else:
-                # Single questionnaire file
-                temp_folder = tempfile.mkdtemp()
-                
-                # Process single file or PDF
-                for attachment in questionnaire_info.get('attachments', []):
-                    file_path = self._download_attachment(attachment['id'])
-                    if file_path:
-                        # Check if PDF and convert to images
-                        if file_path.endswith('.pdf'):
-                            self._convert_pdf_to_images(file_path, temp_folder)
-                        else:
-                            # Move image to temp folder
-                            import shutil
-                            shutil.move(file_path, os.path.join(temp_folder, 'page_1.png'))
-                
-                # Run vision analysis
-                vision_result = self.vision_analyzer.analyze_questionnaire_images(temp_folder)
-                
-                # Check if this is a Dayforce questionnaire
-                is_dayforce = False
-                for attachment in questionnaire_info.get('attachments', []):
-                    filename = attachment.get('filename', '').lower()
-                    # Match any filename containing "dayforce"
-                    if 'dayforce' in filename:
-                        is_dayforce = True
-                        logger.info(f"Detected Dayforce questionnaire: {filename}")
-                        break
-                
-                # Apply Dayforce handler if needed
-                if is_dayforce:
-                    vision_result = self.dayforce_handler.process_dayforce_questionnaire(vision_result)
-                
-                # Clean up
-                import shutil
-                shutil.rmtree(temp_folder)
-                
-                return vision_result
+            results = {
+                'pdf_extraction': None,
+                'vision_analysis': None,
+                'hybrid_result': None,
+                'confidence_score': 0.0
+            }
+            
+            # First, try PDF form extraction for any PDF files
+            pdf_results = self._extract_pdf_forms(questionnaire_info)
+            if pdf_results.get('has_form_fields'):
+                results['pdf_extraction'] = pdf_results
+                logger.info("Successfully extracted PDF form fields")
+            
+            # Then, do enhanced vision analysis
+            vision_results = self._enhanced_vision_analysis(questionnaire_info)
+            results['vision_analysis'] = vision_results
+            
+            # Combine results using hybrid approach
+            results['hybrid_result'] = self._combine_extraction_results(
+                pdf_results, vision_results
+            )
+            
+            # Calculate confidence score
+            results['confidence_score'] = self._calculate_confidence(results)
+            
+            # Apply Dayforce handler if needed
+            is_dayforce = self._detect_dayforce(questionnaire_info)
+            if is_dayforce:
+                results['hybrid_result'] = self.dayforce_handler.process_dayforce_questionnaire(
+                    results['hybrid_result']
+                )
+            
+            return results
                 
         except Exception as e:
             logger.error(f"Error processing questionnaire: {e}")
             return {'error': str(e)}
+    
+    def _extract_pdf_forms(self, questionnaire_info: Dict) -> Dict[str, Any]:
+        """Extract form fields directly from PDF files"""
+        
+        combined_data = {'has_form_fields': False}
+        
+        try:
+            # Get all PDF attachments
+            for attachment in questionnaire_info.get('attachments', []):
+                file_path = self._download_attachment(attachment['id'])
+                
+                if file_path and file_path.endswith('.pdf'):
+                    # Try direct PDF form extraction
+                    pdf_data = self.pdf_extractor.extract_all_fields(file_path)
+                    
+                    if pdf_data.get('has_form_fields'):
+                        combined_data = pdf_data
+                        logger.info(f"Extracted form fields from {attachment.get('filename', 'PDF')}")
+                    
+                    # Clean up
+                    os.unlink(file_path)
+            
+            return combined_data
+            
+        except Exception as e:
+            logger.error(f"Error extracting PDF forms: {e}")
+            return {'has_form_fields': False, 'error': str(e)}
+    
+    def _enhanced_vision_analysis(self, questionnaire_info: Dict) -> Dict[str, Any]:
+        """Perform enhanced vision analysis with Pillow preprocessing"""
+        
+        try:
+            # Create enhanced versions for better detection
+            temp_folder = tempfile.mkdtemp()
+            enhanced_folder = tempfile.mkdtemp()
+            
+            # Download and process images
+            if questionnaire_info['type'] == 'multi_page':
+                for i, page_info in enumerate(questionnaire_info['pages']):
+                    file_path = self._download_attachment(page_info['id'])
+                    if file_path:
+                        new_path = os.path.join(temp_folder, f"page_{i+1}.png")
+                        os.rename(file_path, new_path)
+            else:
+                for attachment in questionnaire_info.get('attachments', []):
+                    file_path = self._download_attachment(attachment['id'])
+                    if file_path:
+                        if file_path.endswith('.pdf'):
+                            self._convert_pdf_to_images(file_path, temp_folder)
+                        else:
+                            import shutil
+                            shutil.move(file_path, os.path.join(temp_folder, 'page_1.png'))
+            
+            # Create enhanced versions of all images
+            enhanced_paths = {}
+            for img_file in os.listdir(temp_folder):
+                if img_file.endswith('.png'):
+                    img_path = os.path.join(temp_folder, img_file)
+                    enhanced_versions = self.form_enhancer.create_enhanced_versions(img_path)
+                    
+                    # Save enhanced versions
+                    base_name = os.path.splitext(img_file)[0]
+                    for version_name, enhanced_img in enhanced_versions.items():
+                        enhanced_path = os.path.join(enhanced_folder, f"{base_name}_{version_name}.png")
+                        enhanced_img.save(enhanced_path, 'PNG', quality=100)
+                        
+                        if version_name not in enhanced_paths:
+                            enhanced_paths[version_name] = []
+                        enhanced_paths[version_name].append(enhanced_path)
+            
+            # Run vision analysis on both original and enhanced versions
+            results = {}
+            
+            # Original analysis
+            original_result = self.vision_analyzer.analyze_questionnaire_images(temp_folder)
+            results['original'] = original_result
+            
+            # Enhanced analyses
+            for version_name, image_paths in enhanced_paths.items():
+                if version_name in ['checkbox_binary', 'radio_enhanced', 'combined']:
+                    # Create temp folder for this version
+                    version_folder = tempfile.mkdtemp()
+                    
+                    # Copy enhanced images to version folder
+                    for i, img_path in enumerate(image_paths):
+                        import shutil
+                        dest_path = os.path.join(version_folder, f"page_{i+1}.png")
+                        shutil.copy2(img_path, dest_path)
+                    
+                    # Analyze this version
+                    version_result = self.vision_analyzer.analyze_questionnaire_images(version_folder)
+                    results[version_name] = version_result
+                    
+                    # Clean up version folder
+                    shutil.rmtree(version_folder)
+            
+            # Clean up temp folders
+            import shutil
+            shutil.rmtree(temp_folder)
+            shutil.rmtree(enhanced_folder)
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error in enhanced vision analysis: {e}")
+            return {'error': str(e)}
+    
+    def _combine_extraction_results(self, pdf_data: Dict, vision_data: Dict) -> Dict[str, Any]:
+        """Combine PDF and vision extraction results intelligently"""
+        
+        combined = {
+            'extraction_method': 'hybrid',
+            'pdf_available': pdf_data.get('has_form_fields', False),
+            'vision_versions': list(vision_data.keys()) if vision_data else [],
+            'final_data': {}
+        }
+        
+        try:
+            # If PDF extraction was successful, use it as the base
+            if pdf_data.get('has_form_fields') and pdf_data.get('questionnaire_data'):
+                combined['final_data'] = pdf_data['questionnaire_data'].copy()
+                combined['primary_source'] = 'pdf'
+                logger.info("Using PDF extraction as primary source")
+            else:
+                combined['primary_source'] = 'vision'
+                logger.info("Using vision analysis as primary source")
+            
+            # Find the best vision analysis result
+            best_vision_result = self._select_best_vision_result(vision_data)
+            if best_vision_result:
+                combined['best_vision_version'] = best_vision_result['version']
+                
+                # If no PDF data, use vision as primary
+                if not combined['final_data']:
+                    combined['final_data'] = best_vision_result['data']
+                else:
+                    # Cross-validate and fill gaps with vision data
+                    self._cross_validate_results(combined['final_data'], best_vision_result['data'])
+            
+            return combined
+            
+        except Exception as e:
+            logger.error(f"Error combining extraction results: {e}")
+            return {'error': str(e)}
+    
+    def _select_best_vision_result(self, vision_data: Dict) -> Optional[Dict]:
+        """Select the best vision analysis result based on completeness and confidence"""
+        
+        if not vision_data:
+            return None
+        
+        best_result = None
+        best_score = 0
+        
+        # Score each version based on data completeness
+        for version_name, result in vision_data.items():
+            if isinstance(result, dict) and 'extracted_data' in result:
+                data = result['extracted_data']
+                score = 0
+                
+                # Score based on key fields extracted
+                key_fields = ['red_seal_status', 'trade_licenses', 'years_experience', 
+                            'willing_to_travel', 'available_start']
+                
+                for field in key_fields:
+                    if field in data and data[field] not in [None, '', 'Not specified']:
+                        score += 1
+                
+                # Bonus for specialized versions
+                if version_name in ['checkbox_binary', 'radio_enhanced']:
+                    score += 0.5
+                
+                if score > best_score:
+                    best_score = score
+                    best_result = {
+                        'version': version_name,
+                        'data': data,
+                        'score': score
+                    }
+        
+        return best_result
+    
+    def _cross_validate_results(self, pdf_data: Dict, vision_data: Dict):
+        """Cross-validate PDF and vision results, filling gaps"""
+        
+        # For each field, compare PDF vs Vision and choose the best
+        critical_fields = ['red_seal_status', 'trade_licenses', 'years_experience']
+        
+        for field in critical_fields:
+            pdf_value = pdf_data.get(field)
+            vision_value = vision_data.get(field)
+            
+            # If PDF is empty but vision has data, use vision
+            if not pdf_value and vision_value:
+                pdf_data[field] = vision_value
+                logger.info(f"Filled {field} from vision analysis: {vision_value}")
+            
+            # If values conflict, log for manual review
+            elif pdf_value and vision_value and pdf_value != vision_value:
+                logger.warning(f"Conflict in {field}: PDF='{pdf_value}' vs Vision='{vision_value}'")
+                # For now, keep PDF value but add note
+                pdf_data[f'{field}_conflict'] = {
+                    'pdf': pdf_value,
+                    'vision': vision_value
+                }
+    
+    def _calculate_confidence(self, results: Dict) -> float:
+        """Calculate overall confidence score for the extraction"""
+        
+        confidence = 0.0
+        
+        # Base confidence from extraction methods available
+        if results.get('pdf_extraction', {}).get('has_form_fields'):
+            confidence += 0.6  # PDF extraction is more reliable
+        
+        if results.get('vision_analysis'):
+            confidence += 0.4  # Vision analysis adds confidence
+        
+        # Boost confidence if multiple methods agree
+        if results.get('hybrid_result', {}).get('primary_source') == 'pdf':
+            confidence += 0.2
+        
+        # Reduce confidence if there are conflicts
+        final_data = results.get('hybrid_result', {}).get('final_data', {})
+        conflicts = [k for k in final_data.keys() if k.endswith('_conflict')]
+        confidence -= len(conflicts) * 0.1
+        
+        return min(1.0, max(0.0, confidence))
+    
+    def _detect_dayforce(self, questionnaire_info: Dict) -> bool:
+        """Detect if this is a Dayforce questionnaire"""
+        
+        for attachment in questionnaire_info.get('attachments', []):
+            filename = attachment.get('filename', '').lower()
+            if 'dayforce' in filename:
+                logger.info(f"Detected Dayforce questionnaire: {filename}")
+                return True
+        return False
     
     def _process_interview_notes(self, interview_info: Dict) -> Dict[str, Any]:
         """Process interview notes using AI extraction"""
