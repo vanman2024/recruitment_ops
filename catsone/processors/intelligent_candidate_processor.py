@@ -81,9 +81,9 @@ class IntelligentCandidateProcessor:
                 'interview_notes': attachment_results.get('interview_notes')
             }
             
-            # Step 4: Process questionnaire if found
+            # Step 4: Process questionnaire if found - Enhanced Hybrid Approach
             if attachment_results.get('questionnaire_data'):
-                logger.info("Analyzing questionnaire data...")
+                logger.info("Analyzing questionnaire data with hybrid extraction...")
                 questionnaire_data = attachment_results['questionnaire_data']
                 
                 # Ensure questionnaire_data is a dict
@@ -91,8 +91,48 @@ class IntelligentCandidateProcessor:
                     logger.error(f"Questionnaire data is not a dict: {type(questionnaire_data)}")
                     questionnaire_data = {}
                 
+                # NEW: Handle hybrid extraction results
+                if questionnaire_data.get('hybrid_result'):
+                    logger.info("Processing hybrid extraction results (PDF + Enhanced Vision)")
+                    hybrid_data = questionnaire_data['hybrid_result']
+                    final_data = hybrid_data.get('final_data', {})
+                    
+                    # Extract key information from hybrid results
+                    if final_data.get('red_seal_status'):
+                        all_data['certifications']['red_seal'] = final_data['red_seal_status']
+                        logger.info(f"Hybrid extraction - Red Seal: {final_data['red_seal_status']}")
+                    
+                    if final_data.get('trade_licenses'):
+                        if isinstance(final_data['trade_licenses'], list):
+                            all_data['certifications']['journeyman_licenses'] = final_data['trade_licenses']
+                        else:
+                            # Handle single license as string
+                            all_data['certifications']['journeyman_licenses'] = [final_data['trade_licenses']]
+                        logger.info(f"Hybrid extraction - Trade licenses: {final_data['trade_licenses']}")
+                    
+                    if final_data.get('years_experience'):
+                        all_data['certifications']['years_experience'] = final_data['years_experience']
+                    
+                    if final_data.get('willing_to_travel') is not None:
+                        all_data['responses']['willing_to_travel'] = final_data['willing_to_travel']
+                    
+                    if final_data.get('available_start'):
+                        all_data['responses']['available_start'] = final_data['available_start']
+                    
+                    # Add confidence metadata for tracking
+                    confidence_score = questionnaire_data.get('confidence_score', 0.0)
+                    all_data['extraction_metadata'] = {
+                        'method': 'hybrid_pdf_vision',
+                        'confidence_score': confidence_score,
+                        'primary_source': hybrid_data.get('primary_source', 'unknown'),
+                        'pdf_available': hybrid_data.get('pdf_available', False)
+                    }
+                    
+                    logger.info(f"Hybrid extraction completed - Confidence: {confidence_score:.2f}, "
+                              f"Primary source: {hybrid_data.get('primary_source')}")
+                
                 # Check for Claude vision format (candidate_profile with all_responses)
-                if questionnaire_data and 'candidate_profile' in questionnaire_data:
+                elif questionnaire_data and 'candidate_profile' in questionnaire_data:
                     logger.info("Processing Claude vision questionnaire data")
                     profile = questionnaire_data['candidate_profile']
                     
@@ -100,6 +140,21 @@ class IntelligentCandidateProcessor:
                     if not isinstance(profile, dict):
                         logger.error(f"Profile is not a dict: {type(profile)}, value: {profile}")
                         profile = {}
+                    
+                    # Extract Red Seal with confidence tracking
+                    if 'certifications' in profile:
+                        certs = profile['certifications']
+                        if certs.get('red_seal'):
+                            all_data['certifications']['red_seal'] = certs['red_seal']
+                            # Add confidence if available
+                            if certs.get('red_seal_confidence'):
+                                all_data['certifications']['red_seal_confidence'] = certs['red_seal_confidence']
+                        
+                        if certs.get('journeyman_licenses'):
+                            all_data['certifications']['journeyman_licenses'] = certs['journeyman_licenses']
+                            # Add high confidence trades if available
+                            if certs.get('high_confidence_trades'):
+                                all_data['certifications']['high_confidence_trades'] = certs['high_confidence_trades']
                     
                     # Extract equipment from all_responses
                     for response in profile.get('all_responses', []):
@@ -119,9 +174,20 @@ class IntelligentCandidateProcessor:
                         equipment = profile['equipment_experience']
                         all_data['equipment']['brands_worked_with'].extend(equipment.get('brands_worked_with', []))
                         all_data['equipment']['equipment_types'].extend(equipment.get('equipment_types', []))
+                    
+                    # Add confidence metadata if available
+                    if 'confidence_metadata' in profile:
+                        conf_meta = profile['confidence_metadata']
+                        all_data['extraction_metadata'] = {
+                            'method': 'enhanced_vision',
+                            'confidence_score': conf_meta.get('overall_confidence', 0.0),
+                            'enhancement_levels': conf_meta.get('enhancement_levels', []),
+                            'questionable_selections': len(conf_meta.get('questionable_selections', []))
+                        }
                 
                 # Old format compatibility
                 elif questionnaire_data and 'responses' in questionnaire_data:
+                    logger.info("Processing legacy questionnaire format")
                     # Extract ALL data from questionnaire
                     questionnaire_extracted = self.extractor.extract_all_questionnaire_data(questionnaire_data)
                     
@@ -129,14 +195,27 @@ class IntelligentCandidateProcessor:
                     all_data['responses'].update(questionnaire_extracted.get('responses', {}))
                     all_data['equipment'] = questionnaire_extracted.get('equipment', all_data['equipment'])
                     all_data['certifications'].update(questionnaire_extracted.get('certifications', {}))
+                    
+                    # Add metadata
+                    all_data['extraction_metadata'] = {
+                        'method': 'legacy_format',
+                        'confidence_score': 0.5  # Default for legacy
+                    }
             
             # Step 5: Apply job-specific formatting
             # Use AI formatter if we have questionnaire data
             if attachment_results.get('questionnaire_data') and isinstance(attachment_results['questionnaire_data'], dict):
                 logger.info("Using AI formatter for comprehensive notes")
+                
+                # Add resume data if available for cross-reference
+                resume_text = ""
+                if attachment_results.get('resume_data'):
+                    resume_text = attachment_results['resume_data'].get('text', '')
+                
                 formatted_notes = self.ai_formatter.format_questionnaire_notes(
                     questionnaire_data=attachment_results['questionnaire_data'],
-                    job_requirements=job_requirements
+                    job_requirements=job_requirements,
+                    resume_text=resume_text
                 )
             else:
                 # Fallback to template-based formatting
@@ -156,7 +235,15 @@ class IntelligentCandidateProcessor:
             # Step 6: Update CATS
             success = self.cats.update_candidate_notes(candidate_id, final_notes)
             
-            # Step 7: Send Slack notification if notes were successfully updated
+            # Step 7: Add "AI Notes Generated" tag if successful
+            if success:
+                tag_success = self.cats.add_tag_to_candidate(candidate_id, "AI Notes Generated")
+                if tag_success:
+                    logger.info(f"Added 'AI Notes Generated' tag to candidate {candidate_id}")
+                else:
+                    logger.warning(f"Failed to add 'AI Notes Generated' tag to candidate {candidate_id}")
+            
+            # Step 8: Send Slack notification if notes were successfully updated
             if success:
                 self._send_slack_notification(
                     candidate_id=candidate_id,
